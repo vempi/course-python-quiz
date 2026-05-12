@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}HydroLab — Pilih Paket Soal{% endblock %}
+
+{% block head %}
+<style>
+  .pkg-card {
+    cursor: pointer; border: 2px solid #dee2e6; border-radius: 12px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .pkg-card:hover { border-color: #1a6fa8; box-shadow: 0 4px 16px rgba(26,111,168,.15); }
+  .pkg-card.selected { border-color: #0d3b5e; box-shadow: 0 4px 20px rgba(13,59,94,.2); }
+  .pkg-badge { background: #0d3b5e; color: #fff; border-radius: 8px; padding: 2px 10px; font-size:.8rem; }
+</style>
+{% endblock %}
+
+{% block navbar_extra %}
+  <span class="text-white small opacity-75">{{ session.name }} ({{ session.nim }})</span>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-start pt-5" style="min-height:85vh;">
+  <div style="max-width:640px; width:100%;">
+    <h5 class="fw-bold mb-1">Pilih Paket Soal</h5>
+    <p class="text-muted small mb-4">Pilih paket soal sesuai instruksi dosen. Kamu tidak bisa ganti paket setelah memulai.</p>
+
+    <form method="post" action="/select-package/{{ session.id }}">
+      <div class="d-flex flex-column gap-3 mb-4">
+        {% for pkg_id, pkg in packages.items() %}
+        <label class="pkg-card p-4 d-flex align-items-start gap-3">
+          <input type="radio" name="package_id" value="{{ pkg.id }}"
+                 class="form-check-input mt-1" required
+                 onchange="document.querySelectorAll('.pkg-card').forEach(c=>c.classList.remove('selected'));this.closest('.pkg-card').classList.add('selected')">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="fw-bold fs-6">{{ pkg.name }}</span>
+              <span class="pkg-badge">{{ pkg.tasks|length }} soal</span>
+            </div>
+            <div class="fw-semibold text-primary small mb-1">{{ pkg.subtitle }}</div>
+            <div class="text-muted small">{{ pkg.description }}</div>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary px-5 fw-semibold">Mulai Mengerjakan →</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

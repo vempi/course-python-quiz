@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}HydroLab{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <style>
+    :root {
+      --blue-dark: #0d3b5e;
+      --blue-mid:  #1a6fa8;
+      --blue-light:#e8f4fd;
+      --green:     #198754;
+      --orange:    #fd7e14;
+    }
+    body { background: #f4f7fb; font-family: 'Segoe UI', sans-serif; }
+    .navbar-brand { font-weight: 700; font-size: 1.2rem; letter-spacing: .5px; }
+    .navbar { background: var(--blue-dark) !important; }
+    .badge-task { background: var(--blue-mid); }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <nav class="navbar navbar-dark px-3 py-2">
+    <a class="navbar-brand" href="/">🌊 HydroLab</a>
+    <div class="d-flex gap-2 align-items-center">
+      {% block navbar_extra %}{% endblock %}
+    </div>
+  </nav>
+  <main>{% block content %}{% endblock %}</main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

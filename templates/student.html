@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}HydroLab — Soal {{ task.no }}{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/theme/dracula.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/addon/scroll/simplescrollbars.min.css" />
+  <style>
+    .CodeMirror { height: 340px; font-size: 13.5px; border-radius: 6px; }
+    #output-box {
+      background: #1e1e1e; color: #d4d4d4; font-family: monospace;
+      font-size: 12.5px; min-height: 120px; max-height: 260px;
+      overflow-y: auto; padding: 10px 14px; border-radius: 6px;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .output-error { color: #f48771; }
+    .task-desc h2 { font-size: 1.1rem; }
+    .task-desc table { font-size: 0.85rem; }
+    .progress { height: 8px; }
+    .panel-left { border-right: 1px solid #dee2e6; overflow-y: auto; height: calc(100vh - 60px); }
+    .panel-right { overflow-y: auto; height: calc(100vh - 60px); }
+  </style>
+{% endblock %}
+
+{% block navbar_extra %}
+  <span class="text-white small opacity-75">{{ session.name }} ({{ session.nim }})</span>
+  <span class="badge badge-task ms-2">Soal {{ task.no }}/{{ total_tasks }}</span>
+{% endblock %}
+
+{% block content %}
+{% if all_done %}
+<!-- ── Completion screen ── -->
+<div class="d-flex justify-content-center align-items-center" style="min-height:80vh;">
+  <div class="text-center">
+    <div style="font-size:5rem;">🎉</div>
+    <h3 class="fw-bold mt-3">Semua soal selesai!</h3>
+    <p class="text-muted">Kerja bagus, <strong>{{ session.name }}</strong>. Jawaban kamu sudah tersimpan.</p>
+  </div>
+</div>
+{% else %}
+<!-- ── Progress bar ── -->
+<div class="px-3 pt-2 pb-1 bg-white border-bottom">
+  <div class="d-flex justify-content-between small text-muted mb-1">
+    <span>Progress</span>
+    <span>{{ task.no - 1 }}/{{ total_tasks }} selesai</span>
+  </div>
+  <div class="progress">
+    <div class="progress-bar bg-primary" style="width: {{ ((task.no - 1) / total_tasks * 100)|int }}%"></div>
+  </div>
+</div>
+
+<!-- ── Two-column layout ── -->
+<div class="d-flex" style="height: calc(100vh - 100px);">
+
+  <!-- Left: task description -->
+  <div class="panel-left p-3 col-4">
+    <div class="task-desc" id="task-desc-rendered"></div>
+  </div>
+
+  <!-- Right: editor + controls -->
+  <div class="panel-right p-3 col-8">
+    <textarea id="code-editor">{{ task.starter_code }}</textarea>
+
+    <div class="d-flex gap-2 mt-2 mb-2">
+      <button id="btn-run" class="btn btn-sm btn-dark px-4">▶ Jalankan</button>
+      <button id="btn-submit" class="btn btn-sm btn-success px-4">✓ Submit Soal {{ task.no }}</button>
+      <span id="status-msg" class="small text-muted align-self-center ms-2"></span>
+    </div>
+
+    <div class="small fw-semibold text-muted mb-1">Output:</div>
+    <div id="output-box">— belum dijalankan —</div>
+
+    <div id="explanation-section" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid #dee2e6;">
+      <div class="small fw-semibold text-muted mb-2">Penjelasan (wajib diisi sebelum submit):</div>
+      <textarea id="explanation-box" class="form-control form-control-sm" rows="4"
+        placeholder="Jelaskan:&#10;1. Logika kode yang paling kompleks&#10;2. Masalah yang kamu hadapi&#10;3. Bagian yang tidak kamu pahami"
+        style="font-size:12px;"></textarea>
+      <div class="small text-muted mt-1">Penjelasan membantu instruktur memahami pemikiran kamu.</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+
+<script>
+{% if not all_done %}
+const SESSION_ID = {{ session.id }};
+const TASK_NO    = {{ task.no }};
+
+// Render markdown task description
+const rawDesc = {{ task.description | tojson }};
+document.getElementById('task-desc-rendered').innerHTML = marked.parse(rawDesc);
+
+// CodeMirror editor
+const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+  mode: 'python',
+  theme: 'dracula',
+  lineNumbers: true,
+  indentUnit: 4,
+  tabSize: 4,
+  indentWithTabs: false,
+  extraKeys: { Tab: cm => cm.execCommand('insertSoftTab') },
+});
+
+function setStatus(msg, cls='text-muted') {
+  const el = document.getElementById('status-msg');
+  el.textContent = msg;
+  el.className = 'small align-self-center ms-2 ' + cls;
+}
+
+function showOutput(stdout, stderr) {
+  const box = document.getElementById('output-box');
+  if (stderr) {
+    box.innerHTML = '<span class="output-error">' + escHtml(stderr) + '</span>';
+    if (stdout) box.innerHTML += '\n' + escHtml(stdout);
+  } else {
+    box.textContent = stdout || '(tidak ada output)';
+  }
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Run button
+document.getElementById('btn-run').addEventListener('click', async () => {
+  setStatus('Menjalankan...', 'text-warning');
+  const code = editor.getValue();
+  const res = await fetch(`/run/${SESSION_ID}/${TASK_NO}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({code}),
+  }).then(r => r.json());
+  showOutput(res.stdout, res.stderr);
+  setStatus(res.returncode === 0 ? 'Berhasil ✓' : 'Ada error', res.returncode === 0 ? 'text-success' : 'text-danger');
+  // Show explanation form after first run
+  document.getElementById('explanation-section').style.display = 'block';
+});
+
+// Submit button
+document.getElementById('btn-submit').addEventListener('click', async () => {
+  const explanation = document.getElementById('explanation-box').value.trim();
+  if (!explanation) {
+    alert('Penjelasan wajib diisi sebelum submit soal.');
+    return;
+  }
+  if (!confirm(`Submit soal ${TASK_NO}? Kamu tidak bisa kembali ke soal ini.`)) return;
+  setStatus('Menyimpan...', 'text-warning');
+  const code = editor.getValue();
+  const res = await fetch(`/submit/${SESSION_ID}/${TASK_NO}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({code, explanation}),
+  }).then(r => r.json());
+
+  if (res.done) {
+    window.location.href = `/student/${SESSION_ID}`;
+  } else {
+    window.location.href = `/student/${SESSION_ID}`;
+  }
+});
+{% endif %}
+</script>
+{% endblock %}

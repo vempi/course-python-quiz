@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% block title %}HydroLab — Dashboard Instruktur{% endblock %}
+
+{% block head %}
+<style>
+  #tbl-students th { background: #0d3b5e; color: #fff; font-size: .82rem; }
+  #tbl-students td { font-size: .85rem; vertical-align: middle; }
+  .badge-done   { background:#198754; }
+  .badge-active { background:#1a6fa8; }
+  .badge-idle   { background:#6c757d; }
+  .output-preview {
+    font-family: monospace; font-size: 11px; color: #444;
+    max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  #stats-bar .card { border: none; border-radius: 10px; }
+  .modal-body pre { background:#1e1e1e; color:#d4d4d4; padding:12px; border-radius:6px;
+                    font-size:12px; max-height:320px; overflow-y:auto; white-space:pre-wrap; }
+  #live-dot { width:10px; height:10px; background:#28a745; border-radius:50%;
+              display:inline-block; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .rubric-table th { background:#f0f4f8; font-size:.8rem; }
+  .rubric-table td { font-size:.82rem; }
+  .rubric-poin { font-weight:700; color:#0d3b5e; min-width:40px; text-align:center; }
+</style>
+{% endblock %}
+
+{% block navbar_extra %}
+  <span id="live-dot" title="Live"></span>
+  <span class="text-white small opacity-75 ms-2">Live Dashboard</span>
+  <a href="/export" class="btn btn-sm btn-success ms-3">⬇ Export Excel</a>
+  <button class="btn btn-sm btn-danger ms-2" onclick="cleanDb()">🗑 Bersihkan Data</button>
+  <a href="/" class="btn btn-sm btn-outline-light ms-2">← Halaman Utama</a>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+  <!-- Stats row -->
+  <div class="row g-3 mb-3" id="stats-bar">
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm p-3 text-center">
+        <div class="fs-2 fw-bold text-primary" id="stat-total">—</div>
+        <div class="small text-muted">Total Mahasiswa</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm p-3 text-center">
+        <div class="fs-2 fw-bold text-success" id="stat-done">—</div>
+        <div class="small text-muted">Selesai Semua</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm p-3 text-center">
+        <div class="fs-2 fw-bold text-warning" id="stat-mid">—</div>
+        <div class="small text-muted">Sedang Mengerjakan</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card shadow-sm p-3 text-center">
+        <div class="fs-2 fw-bold text-secondary" id="stat-runs">—</div>
+        <div class="small text-muted">Total Run</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student table -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0" id="tbl-students">
+        <thead>
+          <tr>
+            <th class="ps-3">NIM</th>
+            <th>Nama</th>
+            <th>Paket</th>
+            <th>Soal</th>
+            <th>Run</th>
+            <th>Submit</th>
+            <th>Terakhir Run</th>
+            <th>Output Terakhir</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body">
+          <tr><td colspan="9" class="text-center text-muted py-4">Menunggu mahasiswa bergabung...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Detail modal -->
+<div class="modal fade" id="detail-modal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-title">Detail Mahasiswa</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modal-body">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm clean modal -->
+<div class="modal fade" id="clean-modal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h6 class="modal-title mb-0">Bersihkan Semua Data?</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body small">
+        Seluruh data sesi, jawaban, dan run mahasiswa akan <strong>dihapus permanen</strong>.
+        Gunakan ini sebelum memulai sesi ujian baru.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger btn-sm" id="btn-confirm-clean">Ya, Hapus Semua</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const PACKAGES = {{ packages | tojson }};
+const detailModal = new bootstrap.Modal(document.getElementById('detail-modal'));
+const cleanModal  = new bootstrap.Modal(document.getElementById('clean-modal'));
+
+function getPkgTotal(pkg_id) {
+  if (!pkg_id || !PACKAGES[pkg_id]) return '?';
+  return PACKAGES[pkg_id].tasks.length;
+}
+
+function getPkgName(pkg_id) {
+  if (!pkg_id || !PACKAGES[pkg_id]) return '—';
+  return PACKAGES[pkg_id].name;
+}
+
+async function fetchSessions() {
+  const sessions = await fetch('/api/sessions').then(r => r.json());
+  renderTable(sessions);
+}
+
+function renderTable(sessions) {
+  const total = sessions.length;
+  const done  = sessions.filter(s => {
+    const t = getPkgTotal(s.package_id);
+    return t !== '?' && s.current_task > t;
+  }).length;
+  const runs  = sessions.reduce((a, s) => a + (s.run_count || 0), 0);
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-done').textContent  = done;
+  document.getElementById('stat-mid').textContent   = total - done;
+  document.getElementById('stat-runs').textContent  = runs;
+
+  if (!sessions.length) {
+    document.getElementById('tbl-body').innerHTML =
+      '<tr><td colspan="9" class="text-center text-muted py-4">Belum ada mahasiswa.</td></tr>';
+    return;
+  }
+
+  const rows = sessions.map(s => {
+    const pkgTotal  = getPkgTotal(s.package_id);
+    const isDone    = pkgTotal !== '?' && s.current_task > pkgTotal;
+    const taskLabel = s.package_id
+      ? (isDone ? '✓ Selesai' : `${s.current_task}/${pkgTotal}`)
+      : '— (belum pilih paket)';
+    const badgeCls  = isDone ? 'badge-done' : (s.run_count > 0 ? 'badge-active' : 'badge-idle');
+    const lastRun   = s.last_run_at ? s.last_run_at.split(' ')[1] : '—';
+    const outPrev   = s.last_output ? s.last_output.trim().split('\n')[0].slice(0, 55) : '';
+    const errPrev   = (!s.last_output && s.last_error)
+      ? '⚠ ' + s.last_error.trim().split('\n')[0].slice(0, 50) : '';
+
+    return `<tr>
+      <td class="ps-3 text-muted small">${esc(s.nim)}</td>
+      <td class="fw-semibold">${esc(s.name)}</td>
+      <td class="small">${esc(getPkgName(s.package_id))}</td>
+      <td><span class="badge ${badgeCls}">${taskLabel}</span></td>
+      <td>${s.run_count}</td>
+      <td>${s.submitted_count}/${pkgTotal}</td>
+      <td class="text-muted small">${lastRun}</td>
+      <td><span class="output-preview ${errPrev ? 'text-danger' : ''}">${esc(errPrev || outPrev || '—')}</span></td>
+      <td><button class="btn btn-sm btn-outline-secondary py-0"
+            onclick="showDetail(${s.id},'${esc(s.name)}')">Detail</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tbl-body').innerHTML = rows;
+}
+
+async function showDetail(sid, name) {
+  document.getElementById('modal-title').textContent = name;
+  document.getElementById('modal-body').innerHTML = '<p class="text-muted">Memuat...</p>';
+  detailModal.show();
+
+  const data = await fetch(`/api/session/${sid}`).then(r => r.json());
+  const { session, submissions } = data;
+  const pkgName = getPkgName(session.package_id);
+
+  let html = `<p class="text-muted small mb-3">
+    NIM: <strong>${esc(session.nim)}</strong> &nbsp;|&nbsp;
+    Paket: <strong>${esc(pkgName)}</strong> &nbsp;|&nbsp;
+    Mulai: ${session.started_at} &nbsp;|&nbsp;
+    Total Run: ${session.run_count}
+  </p>`;
+
+  if (!submissions.length) {
+    html += '<p class="text-muted">Belum ada submission.</p>';
+  } else {
+    submissions.forEach(sub => {
+      const rubric = sub.rubric || [];
+      const totalPoin = rubric.reduce((a, r) => a + r.poin, 0);
+
+      let rubricHtml = '';
+      if (rubric.length) {
+        const rows = rubric.map(r =>
+          `<tr>
+            <td class="text-muted small">${r.no}</td>
+            <td class="small">${esc(r.kriteria)}</td>
+            <td class="rubric-poin">${r.poin}</td>
+          </tr>`
+        ).join('');
+        rubricHtml = `
+          <div class="mt-3">
+            <div class="small fw-semibold text-muted mb-1">Rubrik Penilaian (total ${totalPoin} poin):</div>
+            <table class="table table-sm table-bordered rubric-table mb-0">
+              <thead><tr><th>No</th><th>Kriteria</th><th>Poin</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+      }
+
+      const aiScore = sub.ai_score || 0;
+      let aiBadge = '';
+      if (aiScore >= 70) {
+        aiBadge = `<span class="badge bg-danger">🚨 AI: ${aiScore}/100</span>`;
+      } else if (aiScore >= 50) {
+        aiBadge = `<span class="badge bg-warning text-dark">⚠️ AI: ${aiScore}/100</span>`;
+      } else if (aiScore >= 30) {
+        aiBadge = `<span class="badge bg-info">⚡ ${aiScore}/100</span>`;
+      }
+
+      html += `
+        <div class="mb-4 border rounded p-3">
+          <h6 class="fw-bold mb-2">
+            Soal ${sub.task_no} — ${esc(sub.task_title || '')}
+            <span class="badge bg-success ms-1">Submitted</span>
+            ${aiBadge}
+            <span class="text-muted fw-normal small ms-2">${sub.submitted_at}</span>
+          </h6>
+          <div class="row g-2">
+            <div class="col-md-6">
+              <div class="small fw-semibold text-muted mb-1">Kode:</div>
+              <pre>${esc(sub.code)}</pre>
+            </div>
+            <div class="col-md-6">
+              <div class="small fw-semibold text-muted mb-1">Output:</div>
+              <pre>${esc(sub.output || '(tidak ada output)')}</pre>
+            </div>
+          </div>
+          <div class="row g-2 mt-2">
+            <div class="col-12">
+              <div class="small fw-semibold text-muted mb-1">Penjelasan Mahasiswa:</div>
+              <div class="p-2 bg-light rounded" style="font-size:0.9rem; white-space:pre-wrap;">
+                ${esc(sub.explanation || '(tidak ada penjelasan)')}
+              </div>
+            </div>
+          </div>
+          ${rubricHtml}
+        </div>`;
+    });
+  }
+
+  document.getElementById('modal-body').innerHTML = html;
+}
+
+function cleanDb() { cleanModal.show(); }
+
+document.getElementById('btn-confirm-clean').addEventListener('click', async () => {
+  cleanModal.hide();
+  await fetch('/api/clean-db', { method: 'POST' });
+  fetchSessions();
+});
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// WebSocket live updates
+function connectWS() {
+  const ws = new WebSocket(`ws://${location.host}/ws/dashboard`);
+  ws.onmessage = () => fetchSessions();
+  ws.onclose   = () => setTimeout(connectWS, 2000);
+}
+
+connectWS();
+fetchSessions();
+setInterval(fetchSessions, 10000);
+</script>
+{% endblock %}

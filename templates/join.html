@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}HydroLab — Masuk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height:88vh;">
+  <div class="card shadow-sm border-0" style="width:380px;">
+    <div class="card-body p-4">
+      <div class="text-center mb-4">
+        <div style="font-size:3rem;">🌊</div>
+        <h4 class="fw-bold mt-1">HydroLab</h4>
+        <p class="text-muted small mb-0">Praktikum Python — Teknik Sumber Daya Air</p>
+      </div>
+
+      <form method="post" action="/join">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">NIM</label>
+          <input name="nim" type="text" class="form-control" placeholder="cth. 22/123456/TK/01234"
+                 required autofocus autocomplete="off" />
+        </div>
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Nama Lengkap</label>
+          <input name="name" type="text" class="form-control" placeholder="cth. Budi Santoso"
+                 required autocomplete="off" />
+        </div>
+        <button type="submit" class="btn btn-primary w-100 fw-semibold">
+          Mulai Praktikum →
+        </button>
+      </form>
+
+      <hr class="my-3" />
+      <p class="text-center mb-0">
+        <a href="/dashboard" class="text-muted small">Dashboard Instruktur</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
