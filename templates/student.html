@@ -94,10 +94,13 @@
   <div class="panel-right p-3 col-8">
     <textarea id="code-editor">{{ task.starter_code }}</textarea>
 
-    <div class="d-flex gap-2 mt-2 mb-2">
+    <div class="d-flex gap-2 mt-2 mb-2 align-items-center">
       <button id="btn-run" class="btn btn-sm btn-dark px-4">▶ Jalankan</button>
       <button id="btn-submit" class="btn btn-sm btn-success px-4">✓ Submit Soal {{ task.no }}</button>
       <span id="status-msg" class="small text-muted align-self-center ms-2"></span>
+      <span id="backup-status" class="small text-success ms-auto"
+            style="font-size:0.75rem; opacity:0.8; white-space:nowrap;"
+            title="Backup otomatis aktif"></span>
     </div>
 
     <!-- Output / Plot tabs -->
@@ -167,6 +170,60 @@ const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
   indentWithTabs: false,
   extraKeys: { Tab: cm => cm.execCommand('insertSoftTab') },
 });
+
+// ── Auto-backup: localStorage (immediate) + server (every 60s) ──────────────
+const DRAFT_KEY = `hl_${SESSION_ID}_${TASK_NO}`;
+
+function setBackupStatus(msg) {
+  const el = document.getElementById('backup-status');
+  if (el) el.textContent = msg;
+}
+
+function localSave() {
+  try { localStorage.setItem(DRAFT_KEY, editor.getValue()); } catch (_) {}
+  const t = new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+  setBackupStatus(`💾 ${t}`);
+}
+
+let _saveTimer = null;
+editor.on('change', () => {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(localSave, 3000);
+});
+
+// Server backup every 60 seconds (belt-and-suspenders for cross-device recovery)
+setInterval(async () => {
+  try {
+    await fetch(`/draft/${SESSION_ID}/${TASK_NO}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({code: editor.getValue()}),
+    });
+  } catch (_) {}
+}, 60000);
+
+// Restore on load: localStorage first, then server fallback
+(async () => {
+  let restored = false;
+  try {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved && saved.trim()) {
+      editor.setValue(saved);
+      setBackupStatus('⚡ Dipulihkan');
+      restored = true;
+    }
+  } catch (_) {}
+
+  if (!restored) {
+    try {
+      const data = await fetch(`/draft/${SESSION_ID}/${TASK_NO}`).then(r => r.json());
+      if (data.code && data.code.trim()) {
+        editor.setValue(data.code);
+        setBackupStatus('⚡ Dipulihkan (server)');
+      }
+    } catch (_) {}
+  }
+})();
 
 function setStatus(msg, cls='text-muted') {
   const el = document.getElementById('status-msg');
@@ -239,6 +296,7 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
   }).then(r => r.json());
 
   setStatus('Tersimpan ✓', 'text-success');
+  try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
 
   if (res.done) {
     window.location.href = `/exam-completed/${SESSION_ID}`;

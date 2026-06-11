@@ -253,6 +253,22 @@ async def download_all_code(session_id: int):
     return PlainTextResponse(content, headers=headers, media_type="text/plain")
 
 
+# ── Draft auto-save ──────────────────────────────────────────────────────────
+
+@app.post("/draft/{session_id}/{task_no}")
+async def save_draft(session_id: int, task_no: int, request: Request):
+    body = await request.json()
+    code = body.get("code", "")
+    database.save_draft(session_id, task_no, code)
+    return {"ok": True}
+
+
+@app.get("/draft/{session_id}/{task_no}")
+async def get_draft(session_id: int, task_no: int):
+    code = database.get_draft(session_id, task_no)
+    return {"code": code}
+
+
 # ── SEB quit endpoint ────────────────────────────────────────────────────────
 
 @app.get("/seb-quit", response_class=HTMLResponse)

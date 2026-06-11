@@ -8,6 +8,8 @@ DB_PATH = Path(os.environ.get("DB_PATH", str(Path(__file__).parent / "hydrolab.d
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
     return conn
 
 
@@ -41,6 +43,13 @@ def init_db():
             explanation   TEXT,
             ai_score      INTEGER DEFAULT 0,
             submitted_at  TEXT DEFAULT (datetime('now', '+7 hours'))
+        );
+        CREATE TABLE IF NOT EXISTS drafts (
+            session_id  INTEGER NOT NULL,
+            task_no     INTEGER NOT NULL,
+            code        TEXT,
+            saved_at    TEXT DEFAULT (datetime('now', '+7 hours')),
+            PRIMARY KEY (session_id, task_no)
         );
     """)
     conn.commit()
@@ -154,12 +163,36 @@ def get_session_detail(session_id: int):
     return {"session": session, "submissions": submissions}
 
 
+def save_draft(session_id: int, task_no: int, code: str):
+    conn = get_db()
+    conn.execute(
+        """INSERT INTO drafts (session_id, task_no, code, saved_at)
+           VALUES (?, ?, ?, datetime('now', '+7 hours'))
+           ON CONFLICT(session_id, task_no) DO UPDATE SET
+             code=excluded.code, saved_at=excluded.saved_at""",
+        (session_id, task_no, code),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_draft(session_id: int, task_no: int):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT code FROM drafts WHERE session_id=? AND task_no=?",
+        (session_id, task_no),
+    ).fetchone()
+    conn.close()
+    return row["code"] if row else None
+
+
 def clean_all():
     conn = get_db()
     conn.executescript("""
         DELETE FROM submissions;
         DELETE FROM runs;
         DELETE FROM sessions;
+        DELETE FROM drafts;
     """)
     conn.commit()
     conn.close()
