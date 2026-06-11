@@ -2,6 +2,179 @@
 # Rubrik: list of {"no", "kriteria", "poin"}
 # starter_code: hanya "#  N." agar mahasiswa mulai dari kosong
 
+# ── Paket 1: Kisi-kisi Ujian 2026 ────────────────────────────────────────────
+
+_P1T1 = {
+    "no": 1,
+    "title": "Warming-up: Lihat Data & Ringkasan Singkat",
+    "description": """\
+## Soal 1 — Warming-up: Lihat Data & Ringkasan
+
+Kerjakan:
+1. Import library untuk mengolah dataframe, plotting, dan perhitungan numerik
+2. Tampilkan 5 baris pertama dataset (`head()`)
+3. Cetak daftar nama kolom
+4. Cetak jumlah baris (n) dalam dataset
+
+Tujuan: latihan dasar penggunaan library dasar dan pemahaman struktur data.
+""",
+    "starter_code": """\
+# Dataset tersedia sebagai `df`
+
+# 1. import library (pandas, matplotlib, numpy)
+
+# 2. tampilkan 5 baris pertama
+
+# 3. cetak daftar kolom
+
+# 4. cetak jumlah baris
+""",
+    "rubric": [
+        {"no": "1", "kriteria": "Import pandas, matplotlib, dan numpy dengan benar", "poin": 25},
+        {"no": "2", "kriteria": "Menampilkan 5 baris pertama dengan head()", "poin": 25},
+        {"no": "3", "kriteria": "Mencetak daftar kolom (Date + 4 sumber satelit)", "poin": 25},
+        {"no": "4", "kriteria": "Mencetak jumlah baris dataset (≈ 8036)", "poin": 25},
+    ],
+}
+
+_P1T2 = {
+    "no": 2,
+    "title": "Tipe Data & Missing Values",
+    "description": """\
+## Soal 2 — Tipe Data & Missing Values
+
+Kerjakan:
+1. Print tipe value (string, integer, float) dari masing-masing kolom
+2. Pastikan kolom `Date` bertipe `datetime`
+3. Hapus baris yang pada semua kolomnya berisi NA
+4. Isi missing values (NA) dengan `fillna(0)`
+5. Tampilkan statistik mean per sumber
+""",
+    "starter_code": """\
+# Dataset tersedia sebagai `df`
+
+# 1. print tipe data masing-masing kolom
+
+# 2. pastikan kolom Date bertipe datetime
+
+# 3. hapus baris yang semua kolomnya NA (dropna how='all')
+
+# 4. isi missing values dengan fillna(0)
+
+# 5. tampilkan mean per sumber
+""",
+    "rubric": [
+        {"no": "1", "kriteria": "Tipe data setiap kolom ditampilkan (dtypes atau info())", "poin": 20},
+        {"no": "2", "kriteria": "Kolom Date dikonversi/dipastikan sebagai datetime", "poin": 20},
+        {"no": "3", "kriteria": "Baris yang semua kolomnya NA dihapus dengan dropna(how='all')", "poin": 20},
+        {"no": "4", "kriteria": "Missing values diisi dengan fillna(0)", "poin": 20},
+        {"no": "5", "kriteria": "Mean per sumber ditampilkan setelah cleaning", "poin": 20},
+    ],
+}
+
+_P1T3 = {
+    "no": 3,
+    "title": "Agregasi Bulanan Sederhana",
+    "description": """\
+## Soal 3 — Agregasi Bulanan (Substansi Dimulai)
+
+Kerjakan:
+1. Buat kolom `year` dan `month` dari `Date`
+2. Hitung total curah hujan bulanan (`groupby(['year','month']).sum()`) untuk sumber `GSMAP`
+3. Tampilkan total bulanan untuk tahun pertama (2001) untuk semua kolom
+
+Hint: jika kesulitan, gunakan `df.set_index('Date').resample('M').sum()` lalu pilih tahun 2001.
+""",
+    "starter_code": """\
+# Dataset tersedia sebagai `df`
+
+# 1. buat kolom year dan month dari Date
+
+# 2. hitung total bulanan untuk semua sumber dengan groupby
+
+# 3. tampilkan total bulanan tahun 2001 (semua kolom)
+""",
+    "rubric": [
+        {"no": "1", "kriteria": "Kolom year dan month dibuat dengan benar dari Date", "poin": 30},
+        {"no": "2", "kriteria": "Total bulanan GSMAP dihitung dengan groupby yang benar", "poin": 40},
+        {"no": "3", "kriteria": "Menampilkan 12 baris untuk tahun 2001 dengan semua kolom", "poin": 30},
+    ],
+}
+
+_P1T4 = {
+    "no": 4,
+    "title": "HMT Sederhana",
+    "description": """\
+## Soal 4 — HMT Sederhana
+
+Kerjakan:
+1. Hitung HMT (nilai maksimum harian tiap tahun) untuk semua kolom
+2. Tampilkan sumber data (GSMAP, GPM, dsb) yang memiliki rerata HMT lebih tinggi
+3. Hitung HMT (nilai maksimum harian tiap tahun) untuk `GSMAP` saja
+4. Berikan satu kalimat pendek: tahun mana yang paling ekstrem untuk `GSMAP` (print saja)
+   Misal: "Tahun yang paling ekstrem: 2020"
+
+Hint: `df.groupby(df['Date'].dt.year)['GSMAP'].max()`
+""",
+    "starter_code": """\
+# Dataset tersedia sebagai `df`
+sources = ['GSMAP', 'GPM', 'PERSIANN', 'CHIRPS']
+
+# 1. hitung HMT untuk semua kolom sumber
+
+# 2. tampilkan sumber dengan rerata HMT tertinggi
+
+# 3. hitung HMT khusus GSMAP
+
+# 4. print tahun paling ekstrem untuk GSMAP
+""",
+    "rubric": [
+        {"no": "1", "kriteria": "HMT per tahun untuk semua sumber dihitung dengan groupby yang benar", "poin": 30},
+        {"no": "2", "kriteria": "Sumber dengan rerata HMT tertinggi diidentifikasi dan ditampilkan", "poin": 25},
+        {"no": "3", "kriteria": "HMT per tahun khusus GSMAP dihitung benar", "poin": 25},
+        {"no": "4", "kriteria": "Kalimat singkat tahun paling ekstrem GSMAP diprint dengan format yang benar", "poin": 20},
+    ],
+}
+
+_P1T5 = {
+    "no": 5,
+    "title": "Plot Sederhana: HMT, Bulanan, dan Tahunan",
+    "description": """\
+## Soal 5 — Plot Sederhana
+
+Kerjakan:
+1. Plot HMT untuk semua kolom sumber data
+2. Plot hujan bulanan sepanjang tahun semua kolom
+3. Plot hujan total tahunan untuk `GSMAP` saja
+
+Nilai maksimal:
+1. Tampilkan title: `plt.title(...)`
+2. Tampilkan ylabel (mm) dan xlabel (Tahun) dengan benar
+3. Simpan plot ke file misal: `plot_gsmap_tahunan.png` (gunakan `plt.savefig`)
+4. Pastikan hasil plot muncul di dashboard (`plt.show()`)
+""",
+    "starter_code": """\
+import matplotlib.pyplot as plt
+import numpy as np
+sources = ['GSMAP', 'GPM', 'PERSIANN', 'CHIRPS']
+
+# 1. plot HMT semua sumber (line plot, satu figure)
+
+# 2. plot hujan bulanan semua sumber (hitung dulu, lalu plot)
+
+# 3. plot hujan total tahunan GSMAP saja (bar atau line)
+#    - title, xlabel, ylabel, savefig, show
+""",
+    "rubric": [
+        {"no": "1", "kriteria": "Plot HMT semua sumber dalam satu figure dengan legend, title, dan label sumbu", "poin": 30},
+        {"no": "2", "kriteria": "Plot hujan bulanan semua sumber dengan title dan label sumbu yang benar", "poin": 30},
+        {"no": "3", "kriteria": "Plot total tahunan GSMAP dengan title, ylabel (mm), xlabel (Tahun)", "poin": 25},
+        {"no": "4", "kriteria": "Semua plot disimpan dengan savefig() dan ditampilkan dengan show()", "poin": 15},
+    ],
+}
+
+# ── Paket 2 Tasks ─────────────────────────────────────────────────────────────
+
 _T1 = {
     "no": 1,
     "title": "Eksplorasi Dataset Hujan Multi-Sumber Satelit",
@@ -247,7 +420,7 @@ sources = ['GSMAP', 'GPM', 'PERSIANN', 'CHIRPS']
     ],
 }
 
-# ── Paket 2 Tasks ─────────────────────────────────────────────────────────────
+# ── Paket 3 Tasks ─────────────────────────────────────────────────────────────
 
 _P2T1 = {
     "no": 1,
@@ -535,161 +708,6 @@ sources = ['GSMAP', 'GPM', 'PERSIANN', 'CHIRPS']
     ],
 }
 
-# ── Paket 3: Pemanasan & Soal Sederhana untuk Mahasiswa Pemula ───────────────
-
-_P3T1 = {
-    "no": 1,
-    "title": "Pemanasan: Lihat Data & Ringkasan Singkat",
-    "description": """\
-## Soal 1 — Pemanasan: Lihat Data & Ringkasan
-
-Kerjakan:
-1. Tampilkan 5 baris pertama dataset (`head()`)
-2. Tampilkan 3 baris terakhir dataset (`tail()`)
-3. Cetak daftar nama kolom
-4. Cetak jumlah baris (n) dalam dataset
-
-Tujuan: latihan dasar penggunaan `pandas` dan pemahaman struktur data.
-""",
-    "starter_code": """\
-# Dataset tersedia sebagai `df`
-
-# 1. head
-
-# 2. tail
-
-# 3. daftar kolom
-
-# 4. jumlah baris
-""",
-    "rubric": [
-        {"no": 1, "kriteria": "Menampilkan 5 baris pertama dengan head()", "poin": 25},
-        {"no": 2, "kriteria": "Menampilkan 3 baris terakhir dengan tail()", "poin": 25},
-        {"no": 3, "kriteria": "Mencetak daftar kolom (kolom Date + 4 sumber)", "poin": 25},
-        {"no": 4, "kriteria": "Mencetak jumlah baris dataset (≈ 8036)", "poin": 25},
-    ],
-}
-
-_P3T2 = {
-    "no": 2,
-    "title": "Pemanasan: Tipe Data & Missing Values",
-    "description": """\
-## Soal 2 — Pemanasan: Tipe Data & Missing Values
-
-Kerjakan:
-1. Pastikan kolom `Date` bertipe `datetime` (gunakan `pd.to_datetime` bila perlu)
-2. Hitung jumlah missing value per sumber
-3. Hitung persentase missing per sumber (round 2 desimal)
-4. Isi missing values sementara dengan `fillna(0)` dan tampilkan statistik mean per sumber
-
-Hint: gunakan `df['Date'] = pd.to_datetime(df['Date'])` dan `df.isnull().sum()`
-""",
-    "starter_code": """\
-# Dataset tersedia sebagai `df`
-
-# 1. pastikan Date datetime
-
-# 2. jumlah missing per sumber
-
-# 3. persentase missing per sumber
-
-# 4. fillna(0) lalu tampilkan mean per sumber
-""",
-    "rubric": [
-        {"no": 1, "kriteria": "Kolom Date dipastikan datetime", "poin": 25},
-        {"no": 2, "kriteria": "Jumlah missing per sumber dihitung benar", "poin": 25},
-        {"no": 3, "kriteria": "Persentase missing per sumber dihitung dan dibulatkan", "poin": 25},
-        {"no": 4, "kriteria": "Fillna(0) digunakan sementara dan mean per sumber ditampilkan", "poin": 25},
-    ],
-}
-
-_P3T3 = {
-    "no": 3,
-    "title": "Agregasi Bulanan Sederhana",
-    "description": """\
-## Soal 3 — Agregasi Bulanan (Substansi Dimulai)
-
-Kerjakan:
-1. Buat kolom `year` dan `month` dari `Date`
-2. Hitung total curah hujan bulanan (`groupby(['year','month']).sum()`) untuk sumber `GSMAP`
-3. Tampilkan total bulanan untuk tahun pertama (2001)
-
-Hint: jika kesulitan, gunakan `df.set_index('Date').resample('M').sum()` lalu pilih tahun 2001.
-""",
-    "starter_code": """\
-# Dataset tersedia sebagai `df`
-
-# 1. buat year dan month
-
-# 2. hitung total bulanan GSMAP
-
-# 3. tampilkan total bulanan tahun 2001
-""",
-    "rubric": [
-        {"no": 1, "kriteria": "Kolom year dan month dibuat dengan benar", "poin": 30},
-        {"no": 2, "kriteria": "Total bulanan GSMAP dihitung dengan benar", "poin": 40},
-        {"no": 3, "kriteria": "Menampilkan 12 baris untuk tahun 2001", "poin": 30},
-    ],
-}
-
-_P3T4 = {
-    "no": 4,
-    "title": "HMT Sederhana",
-    "description": """\
-## Soal 4 — HMT Sederhana
-
-Kerjakan:
-1. Hitung HMT (nilai maksimum harian tiap tahun) untuk `GSMAP`
-2. Tampilkan 5 tahun dengan HMT tertinggi beserta tahunnya
-3. Berikan satu kalimat pendek: tahun mana yang paling ekstrem (print saja)
-
-Hint: `df.groupby(df['Date'].dt.year)['GSMAP'].max()`
-""",
-    "starter_code": """\
-# Dataset tersedia sebagai `df`
-
-# 1. hitung HMT GSMAP
-
-# 2. tampilkan 5 tahun teratas
-
-# 3. print kalimat hasil
-""",
-    "rubric": [
-        {"no": 1, "kriteria": "HMT per tahun untuk GSMAP dihitung benar", "poin": 40},
-        {"no": 2, "kriteria": "5 tahun dengan HMT tertinggi ditampilkan benar", "poin": 40},
-        {"no": 3, "kriteria": "Kalimat singkat tentang tahun ekstrem diprint", "poin": 20},
-    ],
-}
-
-_P3T5 = {
-    "no": 5,
-    "title": "Plot Sederhana: Seri Tahunan GSMAP",
-    "description": """\
-## Soal 5 — Plot Sederhana
-
-Kerjakan:
-1. Hitung total curah hujan tahunan untuk `GSMAP`
-2. Buat line plot tahun vs total (gunakan `plt.plot`), beri judul dan label sumbu
-3. Simpan plot ke file `plot_gsmap_tahunan.png` (gunakan `plt.savefig`)
-
-Hint: gunakan `matplotlib` bawaan; jika belum terbiasa, lakukan langkah per langkah: hitung data → print → plot.
-""",
-    "starter_code": """\
-import matplotlib.pyplot as plt
-
-# 1. hitung total tahunan GSMAP
-
-# 2. plot line sederhana
-
-# 3. simpan ke file plot_gsmap_tahunan.png
-""",
-    "rubric": [
-        {"no": 1, "kriteria": "Total tahunan GSMAP dihitung benar", "poin": 30},
-        {"no": 2, "kriteria": "Line plot dibuat dengan label & judul", "poin": 40},
-        {"no": 3, "kriteria": "Plot disimpan dengan nama file yang benar", "poin": 30},
-    ],
-}
-
 # ── Paket 4: Ujian Praktikum Hidrologi ──────────────────────────────────────
 
 _P4T1 = {
@@ -956,10 +974,10 @@ sources = ['GSMAP', 'GPM', 'PERSIANN', 'CHIRPS']
 PACKAGES = {
     1: {
         "id": 1,
-        "name": "Paket 1 (Pemula)",
-        "subtitle": "Soal Dasar untuk Mahasiswa TSDA",
-        "description": "Paket ringan: membaca data, tipe & missing values, agregasi bulanan sederhana, HMT dasar, dan plot sederhana.",
-        "tasks": [_P3T1, _P3T2, _P3T3, _P3T4, _P3T5],
+        "name": "Paket 1 (Kisi-kisi ujian 2026)",
+        "subtitle": "Kisi-kisi Ujian Praktikum Hidroinformatika 2026",
+        "description": "Import library, eksplorasi data, tipe & missing values, agregasi bulanan, HMT multi-sumber, dan visualisasi tiga plot.",
+        "tasks": [_P1T1, _P1T2, _P1T3, _P1T4, _P1T5],
     },
     2: {
         "id": 2,

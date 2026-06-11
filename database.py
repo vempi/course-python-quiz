@@ -21,7 +21,7 @@ def init_db():
             package_id   INTEGER DEFAULT NULL,
             current_task INTEGER DEFAULT 1,
             run_count    INTEGER DEFAULT 0,
-            started_at   TEXT DEFAULT (datetime('now', 'localtime'))
+            started_at   TEXT DEFAULT (datetime('now', '+7 hours'))
         );
         CREATE TABLE IF NOT EXISTS runs (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,7 +30,7 @@ def init_db():
             code        TEXT NOT NULL,
             stdout      TEXT,
             stderr      TEXT,
-            ran_at      TEXT DEFAULT (datetime('now', 'localtime'))
+            ran_at      TEXT DEFAULT (datetime('now', '+7 hours'))
         );
         CREATE TABLE IF NOT EXISTS submissions (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,11 +40,10 @@ def init_db():
             output        TEXT,
             explanation   TEXT,
             ai_score      INTEGER DEFAULT 0,
-            submitted_at  TEXT DEFAULT (datetime('now', 'localtime'))
+            submitted_at  TEXT DEFAULT (datetime('now', '+7 hours'))
         );
     """)
     conn.commit()
-    # Migration: add columns to existing databases
     try:
         conn.execute("ALTER TABLE sessions ADD COLUMN package_id INTEGER DEFAULT NULL")
         conn.commit()
@@ -156,7 +155,6 @@ def get_session_detail(session_id: int):
 
 
 def clean_all():
-    """Hapus seluruh data sesi, run, dan submission. Digunakan instruktur sebelum sesi baru."""
     conn = get_db()
     conn.executescript("""
         DELETE FROM submissions;
