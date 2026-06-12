@@ -11,6 +11,7 @@ WIB = timezone(timedelta(hours=7))
 
 import pandas as pd
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse, StreamingResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
@@ -20,7 +21,38 @@ import runner
 import tasks
 import ai_detector
 
+_SEB_BLOCK_HTML = """<!DOCTYPE html>
+<html lang="id">
+<head><meta charset="UTF-8"><title>Akses Ditolak</title>
+<style>
+body{margin:0;display:flex;align-items:center;justify-content:center;
+     min-height:100vh;background:#0d3b5e;font-family:'Segoe UI',sans-serif;color:#fff;text-align:center;}
+h2{font-size:1.4rem;margin-bottom:8px;}
+p{opacity:.75;font-size:1rem;}
+</style></head>
+<body><div>
+  <div style="font-size:3rem;margin-bottom:16px">🔒</div>
+  <h2>Akses Ditolak</h2>
+  <p>Platform ujian hanya dapat diakses melalui<br><strong>Safe Exam Browser (SEB)</strong>.</p>
+  <p style="font-size:.85rem;margin-top:24px;opacity:.5">Hubungi instruktur jika ada masalah.</p>
+</div></body></html>"""
+
+# Paths yang TIDAK perlu SEB (instruktur + sistem)
+_SEB_BYPASS_PREFIXES = ("/dashboard", "/api/", "/export", "/ws/", "/seb-quit")
+
+
+class SebGuardMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+        if not any(path.startswith(p) for p in _SEB_BYPASS_PREFIXES):
+            ua = request.headers.get("User-Agent", "")
+            if "SEB" not in ua:
+                return HTMLResponse(content=_SEB_BLOCK_HTML, status_code=403)
+        return await call_next(request)
+
+
 app = FastAPI(title="HydroLab")
+app.add_middleware(SebGuardMiddleware)
 templates = Jinja2Templates(directory="templates")
 _security = HTTPBasic()
 
