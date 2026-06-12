@@ -244,7 +244,7 @@ PACKAGES = {
     1: {
         "id": 1,
         "name": "Paket Ujian 2026",
-        "subtitle": "Ujian Praktikum Hidroinformatika 2026",
+        "subtitle": "Ujian Akhir Algoritma dan Pemrograman Komputer",
         "description": "Eksplorasi data, tipe & missing values, agregasi bulanan, HMT multi-sumber, dan analisis hujan tahunan.",
         "tasks": [_ET1, _ET2, _ET3, _ET4, _ET5],
     },
